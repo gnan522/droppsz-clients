@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Droppsz Clients</title>
+<meta name="theme-color" content="#0e0f12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Droppsz Clients">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e0f12; --panel:#16181d; --panel2:#1d2027; --line:#2a2e37;
+    --text:#f2f3f5; --muted:#9aa0ab; --accent:#e8c26a; --accent-ink:#1a1408;
+    --good:#5fd39a; --warn:#f0a35e; --bad:#ef6b6b;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--bg)}
+  body{margin:0;color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:15px;line-height:1.45}
+  .wrap{max-width:1120px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(90px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  .brand small{display:block;color:var(--accent);letter-spacing:.14em;text-transform:uppercase;font-size:11px;font-weight:600;margin-bottom:4px}
+  h1{font-family:"Space Grotesk",sans-serif;font-size:26px;margin:0;letter-spacing:-.01em}
+  .hbtns{display:flex;gap:8px}
+  .btn{appearance:none;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;padding:10px 14px;font:inherit;font-weight:600;cursor:pointer}
+  .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .btn.danger{color:var(--bad)}
+  .btn.ghost{background:transparent}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .status{color:var(--muted);font-size:13px;margin:-6px 0 14px;min-height:18px}
+  .status.err{color:var(--warn)}
+  .hidden{display:none !important}
+
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:18px}
+  @media (min-width:760px){.stats{grid-template-columns:repeat(4,1fr)}}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .stat .k{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+  .stat .v{font-family:"Space Grotesk",sans-serif;font-size:22px;font-weight:700;margin-top:4px}
+  .stat .s{color:var(--muted);font-size:12px;margin-top:2px}
+
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .toolbar input,.toolbar select{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;font:inherit;font-size:16px}
+  .toolbar input{flex:1;min-width:150px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+  .card.done{border-color:#2d4a3c}
+  .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+  .name{font-family:"Space Grotesk",sans-serif;font-size:19px;font-weight:700;margin:0}
+  .tag{display:inline-block;margin-top:4px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+  .price{text-align:right}
+  .price .big{font-family:"Space Grotesk",sans-serif;font-size:21px;font-weight:700;color:var(--accent)}
+  .price .sub{font-size:12px;color:var(--muted)}
+  .notes{color:var(--muted);font-size:13px;margin:0;white-space:pre-wrap}
+  .bar{height:8px;background:var(--panel2);border-radius:999px;overflow:hidden}
+  .bar > i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .3s}
+  .card.done .bar > i{background:var(--good)}
+  .vrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .vnums{display:flex;gap:16px}
+  .vnums div{font-size:12px;color:var(--muted)}
+  .vnums b{display:block;font-size:20px;color:var(--text);font-family:"Space Grotesk",sans-serif}
+  .stepper{display:flex;gap:8px}
+  .stepper button{width:44px;height:44px;border-radius:12px;font-size:20px;padding:0}
+  .money{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+  .money b{color:var(--text)}
+  .money .due b{color:var(--warn)}
+  .money .paid-full b{color:var(--good)}
+  .actions{display:flex;gap:8px;justify-content:flex-end}
+  .actions .btn{padding:7px 12px;font-size:13px}
+  .empty{text-align:center;color:var(--muted);padding:40px 20px;border:1px dashed var(--line);border-radius:16px;grid-column:1/-1}
+
+  .fab{position:fixed;right:calc(18px + env(safe-area-inset-right));bottom:calc(18px + env(safe-area-inset-bottom));border-radius:999px;padding:14px 20px;box-shadow:0 8px 24px rgba(0,0,0,.45);z-index:5}
+
+  .login{max-width:380px;margin:12vh auto 0;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:24px}
+  .login h2{font-family:"Space Grotesk",sans-serif;margin:0 0 4px}
+  .login p{color:var(--muted);margin:0 0 16px;font-size:14px}
+
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:10}
+  @media (min-width:600px){.modal-bg{align-items:center;padding:16px}}
+  .modal-bg.open{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:18px 18px 0 0;width:100%;max-width:520px;max-height:92vh;overflow:auto;padding:20px 20px calc(20px + env(safe-area-inset-bottom))}
+  @media (min-width:600px){.modal{border-radius:18px}}
+  .modal h2{font-family:"Space Grotesk",sans-serif;margin:0 0 14px;font-size:20px}
+  .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field.full{grid-column:1/-1}
+  .field label{font-size:12px;color:var(--muted);font-weight:600}
+  .field input,.field select,.field textarea{background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 11px;font:inherit;font-size:16px;width:100%}
+  .field textarea{min-height:70px;resize:vertical}
+  .mfoot{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+  .ferr{color:var(--bad);font-size:13px;margin-top:10px;min-height:16px}
+</style>
+</head>
+<body>
+
+<!-- Setup notice (shown until firebase-config.js is filled in) -->
+<div class="wrap hidden" id="setupView">
+  <div class="login">
+    <h2>Almost ready</h2>
+    <p>Add your Firebase project settings to <b>firebase-config.js</b>, then reload. See README.md for the steps.</p>
+  </div>
+</div>
+
+<!-- Sign in -->
+<div class="wrap hidden" id="loginView">
+  <form class="login" id="loginForm">
+    <div class="brand"><small>Droppsz Medias</small></div>
+    <h2>Sign in</h2>
+    <p>Client tracker for you and your partner.</p>
+    <div class="field" style="margin-bottom:10px"><label for="lEmail">Email</label><input id="lEmail" type="email" autocomplete="username" required></div>
+    <div class="field"><label for="lPass">Password</label><input id="lPass" type="password" autocomplete="current-password" required></div>
+    <div class="ferr" id="lErr"></div>
+    <button class="btn primary" style="width:100%;margin-top:6px" id="lBtn">Sign in</button>
+  </form>
+</div>
+
+<!-- App -->
+<div class="wrap hidden" id="appView">
+  <header>
+    <div class="brand">
+      <small>Droppsz Medias</small>
+      <h1>Corporate Clients</h1>
+    </div>
+    <div class="hbtns"><button class="btn ghost" id="outBtn">Sign out</button></div>
+  </header>
+  <div class="status" id="status">Loading clients…</div>
+  <section class="stats" id="stats"></section>
+  <div class="toolbar">
+    <input id="search" placeholder="Search clients…" type="search">
+    <select id="filter">
+      <option value="all">All clients</option>
+      <option value="active">In progress</option>
+      <option value="done">All delivered</option>
+      <option value="due">Balance owing</option>
+    </select>
+  </div>
+  <section class="grid" id="grid"></section>
+  <button class="btn primary fab" id="addBtn">+ Add client</button>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <form class="modal" id="form">
+    <h2 id="mTitle">Add client</h2>
+    <div class="fgrid">
+      <div class="field full"><label for="fName">Client name</label><input id="fName" required maxlength="80"></div>
+      <div class="field"><label for="fCat">Industry</label>
+        <select id="fCat"><option>Real estate</option><option>Automotive</option><option>Events</option><option>Other</option></select></div>
+      <div class="field"><label for="fPrice">Package price ($)</label><input id="fPrice" type="number" inputmode="decimal" min="0" step="0.01"></div>
+      <div class="field"><label for="fExtra">Add-ons ($)</label><input id="fExtra" type="number" inputmode="decimal" min="0" step="0.01"></div>
+      <div class="field"><label for="fExtraNote">Add-on note</label><input id="fExtraNote" maxlength="80" placeholder="e.g. event"></div>
+      <div class="field"><label for="fTotal">Videos in package</label><input id="fTotal" type="number" inputmode="numeric" min="0" step="1"></div>
+      <div class="field"><label for="fDel">Videos delivered</label><input id="fDel" type="number" inputmode="numeric" min="0" step="1"></div>
+      <div class="field full"><label for="fPaid">Amount paid so far ($)</label><input id="fPaid" type="number" inputmode="decimal" min="0" step="0.01"></div>
+      <div class="field full"><label for="fNotes">Notes</label><textarea id="fNotes" maxlength="1000"></textarea></div>
+    </div>
+    <div class="ferr" id="fErr"></div>
+    <div class="mfoot">
+      <button type="button" class="btn" id="cancelBtn">Cancel</button>
+      <button type="submit" class="btn primary" id="saveBtn">Save</button>
+    </div>
+  </form>
+</div>
+
+<div class="modal-bg" id="confirmBg">
+  <div class="modal" style="max-width:400px">
+    <h2>Delete client?</h2>
+    <p id="confirmText" style="color:var(--muted);margin:0"></p>
+    <div class="mfoot">
+      <button class="btn" id="noDel">Cancel</button>
+      <button class="btn danger" id="yesDel">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="app.js"></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  }
+</script>
+</body>
+</html>
