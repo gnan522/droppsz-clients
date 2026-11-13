@@ -1,7 +1,7 @@
 // Caches the app shell so it opens instantly and works offline.
 // Client data itself is cached by Firestore's offline persistence.
-const CACHE = "droppsz-clients-v2";
-const SHELL = ["./", "index.html", "app.js", "firebase-config.js", "manifest.webmanifest",
+const CACHE = "droppsz-clients-v3";
+const SHELL = ["./", "index.html", "app.js?v=3", "firebase-config.js?v=3", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
@@ -16,7 +16,7 @@ self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET" || url.origin !== location.origin) return;
   e.respondWith(
-    fetch(e.request).then(res => {
+    fetch(e.request, { cache: "no-cache" }).then(res => {
       const copy = res.clone();
       caches.open(CACHE).then(c => c.put(e.request, copy));
       return res;
