@@ -1,10 +1,10 @@
-// Paste the config from Firebase console → Project settings → Your apps → Web app.
-// These values are safe to publish: access is controlled by sign-in + firestore.rules.
+// Firebase web config for the droppsz-clients project.
+// These values are meant to be public: access is controlled by sign-in + firestore.rules.
 export const firebaseConfig = {
-  apiKey: "PASTE_API_KEY",
-  authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_PROJECT_ID.appspot.com",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId: "PASTE_APP_ID"
+  apiKey: "AIzaSyCluIyh5UQXtbYgNnqVS090PCFvAzV11w8",
+  authDomain: "droppsz-clients.firebaseapp.com",
+  projectId: "droppsz-clients",
+  storageBucket: "droppsz-clients.firebasestorage.app",
+  messagingSenderId: "764516875010",
+  appId: "1:764516875010:web:3c4c3611470edb9148601b"
 };

@@ -6,6 +6,7 @@ import {
   collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+const TEAM_EMAIL = "team@droppsz-clients.app";
 const $ = id => document.getElementById(id);
 const show = id => { ["setupView","loginView","appView"].forEach(v => $(v).classList.toggle("hidden", v !== id)); };
 
@@ -215,8 +216,9 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") { closeForm(
 $("loginForm").addEventListener("submit", async ev => {
   ev.preventDefault();
   $("lErr").textContent = ""; $("lBtn").disabled = true;
-  try { await signInWithEmailAndPassword(auth, $("lEmail").value.trim(), $("lPass").value); }
-  catch (e) { $("lErr").textContent = "Wrong email or password."; }
+  // Everyone signs into one shared team account; the code word is its password.
+  try { await signInWithEmailAndPassword(auth, TEAM_EMAIL, $("lPass").value.trim().toLowerCase()); }
+  catch (e) { $("lErr").textContent = e?.code === "auth/too-many-requests" ? "Too many tries. Wait a minute and try again." : "That code word isn't right."; }
   finally { $("lBtn").disabled = false; }
 });
 $("outBtn").onclick = () => signOut(auth);
@@ -235,7 +237,7 @@ onAuthStateChanged(auth, user => {
     console.error(err);
     loaded = true;
     setStatus(err.code === "permission-denied"
-      ? "This account isn't on the access list. Ask the owner to add your email in Firestore rules."
+      ? "This login doesn't have access. Sign out and enter the team code word."
       : "Couldn't load clients. Check your connection.", true);
     render();
   });
