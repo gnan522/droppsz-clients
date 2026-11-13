@@ -1,6 +1,6 @@
 // Caches the app shell so it opens instantly and works offline.
 // Client data itself is cached by Firestore's offline persistence.
-const CACHE = "droppsz-clients-v1";
+const CACHE = "droppsz-clients-v2";
 const SHELL = ["./", "index.html", "app.js", "firebase-config.js", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 

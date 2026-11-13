@@ -1,12 +1,12 @@
 import { firebaseConfig } from "./firebase-config.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-  collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp
+  collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, getDocsFromServer, query, limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const TEAM_EMAIL = "team@droppsz-clients.app";
+const CODE_KEY = "droppszCode";
 const $ = id => document.getElementById(id);
 const show = id => { ["setupView","loginView","appView"].forEach(v => $(v).classList.toggle("hidden", v !== id)); };
 
@@ -31,7 +31,7 @@ try {
 } catch (_) {
   db = initializeFirestore(app, {});
 }
-const col = collection(db, "clients");
+let col = null; // teams/<code word>/clients — set after the code word is checked
 
 const money = n => "$" + (Number(n) || 0).toLocaleString("en-CA", { maximumFractionDigits: 2 });
 const num = v => { const n = parseFloat(v); return isFinite(n) && n >= 0 ? n : 0; };
@@ -133,7 +133,7 @@ async function bump(id, delta) {
   let next = t.vd + delta; if (next < 0) next = 0; if (t.vt && next > t.vt) next = t.vt;
   if (next === int(c.videosDelivered)) return;
   busy.add(id); render();
-  try { await updateDoc(doc(db, "clients", id), { videosDelivered: next, updatedAt: serverTimestamp() }); setStatus(""); }
+  try { await updateDoc(doc(col, id), { videosDelivered: next, updatedAt: serverTimestamp() }); setStatus(""); }
   catch (e) { writeError(e); }
   finally { busy.delete(id); render(); }
 }
@@ -178,7 +178,7 @@ $("form").addEventListener("submit", async ev => {
   };
   $("saveBtn").disabled = true;
   try {
-    if (editingId) await setDoc(doc(db, "clients", editingId), data, { merge: true });
+    if (editingId) await setDoc(doc(col, editingId), data, { merge: true });
     else await addDoc(col, { ...data, order: Date.now(), createdAt: serverTimestamp() });
     closeForm(); setStatus("");
   } catch (e) { writeError(e); $("fErr").textContent = "Couldn't save. Please try again."; }
@@ -208,25 +208,31 @@ $("grid").addEventListener("click", e => {
 $("noDel").onclick = () => { $("confirmBg").classList.remove("open"); deletingId = null; };
 $("yesDel").onclick = async () => {
   const id = deletingId; $("confirmBg").classList.remove("open"); deletingId = null; if (!id) return;
-  try { await deleteDoc(doc(db, "clients", id)); } catch (e) { writeError(e); }
+  try { await deleteDoc(doc(col, id)); } catch (e) { writeError(e); }
 };
 document.addEventListener("keydown", e => { if (e.key === "Escape") { closeForm(); $("confirmBg").classList.remove("open"); } });
 
-// Auth
-$("loginForm").addEventListener("submit", async ev => {
-  ev.preventDefault();
-  $("lErr").textContent = ""; $("lBtn").disabled = true;
-  // Everyone signs into one shared team account; the code word is its password.
-  try { await signInWithEmailAndPassword(auth, TEAM_EMAIL, $("lPass").value.trim().toLowerCase()); }
-  catch (e) { $("lErr").textContent = e?.code === "auth/too-many-requests" ? "Too many tries. Wait a minute and try again." : "That code word isn't right."; }
-  finally { $("lBtn").disabled = false; }
-});
-$("outBtn").onclick = () => signOut(auth);
+// Code-word sign-in. No accounts: the app signs in anonymously, and the
+// database rules only open teams/<code word>/clients for the right word.
+const saved = { get: () => { try { return localStorage.getItem(CODE_KEY); } catch (_) { return null; } },
+                set: v => { try { v ? localStorage.setItem(CODE_KEY, v) : localStorage.removeItem(CODE_KEY); } catch (_) {} } };
+const normalize = w => String(w || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "");
 
-onAuthStateChanged(auth, user => {
+async function checkWord(word) {
+  if (!auth.currentUser) await signInAnonymously(auth);
+  try {
+    await getDocsFromServer(query(collection(db, "teams", word, "clients"), limit(1)));
+    return true;
+  } catch (e) {
+    if (e && e.code === "permission-denied") return false;
+    throw e;
+  }
+}
+
+function openTeam(word) {
   if (unsub) { unsub(); unsub = null; }
-  if (!user) { clients = []; loaded = false; show("loginView"); return; }
-  show("appView"); setStatus("Loading clients…"); render();
+  col = collection(db, "teams", word, "clients");
+  show("appView"); setStatus("Loading clients…"); loaded = false; render();
   unsub = onSnapshot(col, snap => {
     clients = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -235,10 +241,39 @@ onAuthStateChanged(auth, user => {
     render();
   }, err => {
     console.error(err);
-    loaded = true;
-    setStatus(err.code === "permission-denied"
-      ? "This login doesn't have access. Sign out and enter the team code word."
-      : "Couldn't load clients. Check your connection.", true);
-    render();
+    if (err.code === "permission-denied") { leave(); $("lErr").textContent = "The code word has changed. Enter the new one."; return; }
+    loaded = true; setStatus("Couldn't load clients. Check your connection.", true); render();
   });
+}
+
+function leave() {
+  if (unsub) { unsub(); unsub = null; }
+  saved.set(null); col = null; clients = []; loaded = false;
+  $("lPass").value = ""; show("loginView");
+}
+
+$("loginForm").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const word = normalize($("lPass").value);
+  $("lErr").textContent = "";
+  if (!word) { $("lErr").textContent = "Enter the code word."; return; }
+  $("lBtn").disabled = true;
+  try {
+    if (await checkWord(word)) { saved.set(word); openTeam(word); }
+    else $("lErr").textContent = "That code word isn't right.";
+  } catch (e) {
+    console.error(e);
+    $("lErr").textContent = navigator.onLine ? "Couldn't check the code word. Try again." : "You're offline. Connect to the internet to sign in.";
+  } finally { $("lBtn").disabled = false; }
+});
+$("outBtn").onclick = leave;
+
+// Returning visits: reopen straight away if a code word was saved on this device.
+let started = false;
+onAuthStateChanged(auth, user => {
+  if (started) return;
+  started = true;
+  const word = saved.get();
+  if (user && word) openTeam(word);
+  else show("loginView");
 });

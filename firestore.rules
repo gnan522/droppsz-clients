@@ -1,13 +1,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Only the shared team account (signed in with the code word) can see or change client data.
-    function isTeam() {
-      return request.auth != null
-        && request.auth.token.email == "team@droppsz-clients.app";
+    // Data lives under teams/<code word>/clients. Only the right code word opens it.
+    // The live rules (in the Firebase console) hold a SHA-256 hash of the code word.
+    // Generate it with: printf "yourword" | openssl dgst -sha256 -binary | base64
+    function rightWord(code) {
+      return hashing.sha256(code).toBase64() == "SHA256_OF_CODE_WORD_BASE64";
     }
-    match /clients/{clientId} {
-      allow read, write: if isTeam();
+    match /teams/{code}/clients/{clientId} {
+      allow read, write: if request.auth != null && rightWord(code);
     }
   }
 }
